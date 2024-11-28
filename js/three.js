@@ -1,5 +1,6 @@
 import * as THREE from 'three'; 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 // Crear la escena
 var scene = new THREE.Scene();
@@ -15,35 +16,32 @@ renderer.shadowMap.enabled = true;
 // Asignamos donde va a estar el objeto 3D
 document.body.appendChild(renderer.domElement);
 
-// Agregamos una nueva geometría (No hace falta que sea BoxGeometry, hay mas, como pueden ser esferas, triangulos, etc...)
-var geometry = new THREE.BoxGeometry(1, 1, 1);
-// Asignamos el material del objeto
-var material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
-// Creamos el objeto 3d con la geometría y el material previamente predeclarado
-var cube = new THREE.Mesh(geometry, material);
-cube.castShadow = true;
-cube.position.set(1, 2, 1);
-// Añadimos el objeto 3D a la escena
-scene.add(cube);
-
 // Luz
 var light = new THREE.DirectionalLight(0xffffff, 1, 10);
-light.position.set(-1, 1, 1);
+light.position.set(0, 0, 1);
 light.castShadow = true;
+light.shadow.mapSize.width = 1024; // Aumenta la resolución del mapa de sombras
+light.shadow.mapSize.height = 1024;
+light.shadow.camera.near = 0.5;
+light.shadow.camera.far = 100;
+light.shadow.camera.left = -50;
+light.shadow.camera.right = 50;
+light.shadow.camera.top = 50;
+light.shadow.camera.bottom = -50;
 scene.add(light);
 
 // Creamos un Plano
-var planeGeometry = new THREE.PlaneGeometry(20, 20, 32, 32);
+var planeGeometry = new THREE.PlaneGeometry(70, 70, 32, 32);
 var planeMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
 var plane = new THREE.Mesh(planeGeometry, planeMaterial);
 plane.receiveShadow = true;
-plane.position.set(0, 0, 0);
+plane.position.set(0, 0, -30);
 scene.add(plane);
 
 // Cambiamos la posición de la camara para ver el objeto y el grid
-camera.position.z = 5;
-camera.position.y = -3;
-camera.rotation.x = .5;
+camera.position.z = 45;
+camera.position.y = 45;
+camera.rotation.x = 45;
 
 // Controles
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -58,9 +56,9 @@ const controls = new OrbitControls(camera, renderer.domElement);
 // Click derecho
 //controls.screenSpacePanning = true;
 
-controls.enableDamping = false;
+
 controls.enableDamping = 0.1;
-controls.autoRotate = true;
+controls.autoRotate = false;
 controls.autoRotateSpeed = 60.0;
 controls.enablePan = true;
 
@@ -68,10 +66,33 @@ controls.enablePan = true;
 // controls.minAzimuthAngle = (85 * (-Math.PI / 2)) / 90; // -85 grados
 // controls.maxAzimuthAngle = (85 * (Math.PI / 2)) / 90;  // 85 grados
 
+const loader = new GLTFLoader();
+
+let loadedModel = null; // Variable global para el modelo
+
+loader.load('model.glb', function (gltf) {
+    gltf.scene.traverse(function (child) {
+        if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+        }
+    });
+    loadedModel = gltf.scene; // Guarda la referencia del modelo cargado
+    scene.add(gltf.scene);
+}, undefined, function (error) {
+    console.error(error);
+});
+
+
+
 // Creamos la funcion que renderiza el objeto y lo anima
 function render() {
-    cube.rotation.x += 0.01;
-    cube.rotation.y += 0.01;
+
+    if (loadedModel) {
+
+        loadedModel.rotation.y += 0.01;
+        loadedModel.rotation.z += 0.01
+    }
     
     // required if controls.enableDamping or controls.autoRotate are set to true
 	controls.update();
